@@ -1,0 +1,8 @@
+<network>
+  <name>maas-private2</name>
+  <bridge name='virbr2' stp='on' delay='0'/>
+  <mac address='52:54:00:25:a6:86'/>
+  <domain name='test3'/>
+  <ip address='10.0.12.1' netmask='255.255.255.0'>
+  </ip>
+</network>

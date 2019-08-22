@@ -1,0 +1,14 @@
+<network connections='13'>
+  <name>maas-mgmt</name>
+  <uuid>6cc57853-a5a7-4eb0-a64e-f37a89e2b042</uuid>
+  <forward mode='nat'>
+    <nat>
+      <port start='1024' end='65535'/>
+    </nat>
+  </forward>
+  <bridge name='virbr1' stp='on' delay='0'/>
+  <mac address='52:54:00:c3:11:aa'/>
+  <ip address='10.0.0.1' netmask='255.255.255.0'>
+  </ip>
+</network>
+
