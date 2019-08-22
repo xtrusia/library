@@ -1,0 +1,149 @@
+# vim: set ts=2 et:
+# IMPORTANT: ALL MODIFICATIONS SHOULD BE MADE TO THE TEMPLATE THEN REGENERATE
+#            THE BUNDLE WITH generate-bundle.sh <series> [<os-release>] [<pocket>]
+# Juju 2.x native deployer bundle for development ('next') charms
+
+## Variables
+debug:                      &debug                     True
+verbose:                    &verbose                   True
+
+machines:
+  '0':
+    constraints: arch=amd64 tags=node
+    series: xenial
+  '1':
+    constraints: arch=amd64 tags=node
+    series: xenial
+  '2':
+    constraints: arch=amd64 tags=node
+    series: xenial
+  '3':
+    constraints: arch=amd64 tags=node
+    series: xenial
+  '4':
+    constraints: arch=amd64 tags=node
+    series: xenial
+series: xenial
+services:
+  rabbitmq-server:
+    num_units: 1
+    charm: cs:rabbitmq-server
+    to:
+    - lxd:0
+  keystone:
+    num_units: 1
+    charm: cs:keystone
+    options:
+      debug: *debug
+      verbose: *verbose
+      admin-password: openstack
+      admin-token: ubuntutesting
+      preferred-api-version: 3
+    to:
+    - lxd:0
+  nova-compute:
+    charm: cs:nova-compute
+    num_units: 1
+    options:
+      debug: *debug
+      verbose: *verbose
+      enable-live-migration: True
+      enable-resize: True
+      migration-auth-type: ssh
+    to:
+    - 1
+  openstack-dashboard:
+    num_units: 1
+    charm: cs:openstack-dashboard
+    to:
+    - lxd:2
+  nova-cloud-controller:
+    num_units: 1
+    charm: cs:nova-cloud-controller
+    options:
+      debug: *debug
+      verbose: *verbose
+      network-manager: Neutron
+    to:
+    - lxd:2
+  neutron-gateway:
+    num_units: 1
+    charm: cs:neutron-gateway
+    options:
+      debug: *debug
+      verbose: *verbose
+      instance-mtu: 1300
+      bridge-mappings: physnet1:br-ex
+    to:
+    - 3
+  neutron-api:
+    num_units: 1
+    charm: cs:neutron-api
+    options:
+      debug: *debug
+      verbose: *verbose
+      neutron-security-groups: True
+      flat-network-providers: physnet1
+    to:
+    - lxd:2
+  neutron-openvswitch:
+    charm: cs:neutron-openvswitch
+    num_units: 0
+  cinder:
+    num_units: 1
+    charm: cs:cinder
+    options:
+      debug: *debug
+      verbose: *verbose
+      block-device: None
+      glance-api-version: 2
+    to:
+    - lxd:4
+  glance:
+    num_units: 1
+    charm: cs:glance
+    options:
+      debug: *debug
+      verbose: *verbose
+    to:
+    - lxd:1
+  mysql:
+    num_units: 1
+    charm: cs:percona-cluster
+    options:
+      dataset-size: 50%
+      max-connections: 20000
+      root-password: ChangeMe123
+      sst-password: ChangeMe123
+    to:
+    - lxd:3
+relations:
+  - [ keystone, mysql ]
+  - [ "nova-cloud-controller:shared-db", "mysql:shared-db" ]
+  - [ "nova-cloud-controller:amqp", "rabbitmq-server:amqp" ]
+  - [ nova-cloud-controller, glance ]
+  - [ nova-cloud-controller, keystone ]
+  - [ nova-compute, nova-cloud-controller ]
+  - - nova-compute
+    - rabbitmq-server:amqp
+  - [ nova-compute, glance ]
+  - [ glance, mysql ]
+  - [ glance, keystone ]
+  - [ glance, "cinder:image-service" ]
+  - [ glance, rabbitmq-server ]
+  - [ cinder, mysql ]
+  - [ cinder, rabbitmq-server ]
+  - [ cinder, nova-cloud-controller ]
+  - [ cinder, keystone ]
+  - [ neutron-gateway, nova-cloud-controller ]
+  - [ "neutron-gateway:amqp", rabbitmq-server ]
+  - [ neutron-api, mysql ]
+  - [ neutron-api, rabbitmq-server ]
+  - [ neutron-api, nova-cloud-controller ]
+  - [ neutron-api, neutron-openvswitch ]
+  - [ neutron-api, keystone ]
+  - [ neutron-api, neutron-gateway ]
+  - [ neutron-openvswitch, nova-compute ]
+  - [ neutron-openvswitch, rabbitmq-server ]
+  - - openstack-dashboard:identity-service
+    - keystone:identity-service

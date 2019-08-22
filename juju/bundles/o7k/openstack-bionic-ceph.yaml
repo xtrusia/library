@@ -1,0 +1,220 @@
+# vim: set ts=2 et:
+# IMPORTANT: ALL MODIFICATIONS SHOULD BE MADE TO THE TEMPLATE THEN REGENERATE
+#            THE BUNDLE WITH generate-bundle.sh <series> [<os-release>] [<pocket>]
+# Juju 2.x native deployer bundle for development ('next') charms
+
+## Variables
+debug:                      &debug                     True
+verbose:                    &verbose                   True
+
+machines:
+  '0':
+    constraints: arch=amd64 tags=compute
+    series: bionic
+  '1':
+    constraints: arch=amd64 tags=compute
+    series: bionic
+  '2':
+    constraints: arch=amd64 tags=compute
+    series: bionic
+  '3':
+    constraints: arch=amd64 tags=compute
+    series: bionic
+  '4':
+    constraints: arch=amd64 tags=compute
+    series: bionic
+  '5':
+    constraints: arch=amd64 tags=node
+    series: bionic
+  '6':
+    constraints: arch=amd64 tags=node
+    series: bionic
+  '7':
+    constraints: arch=amd64 tags=node
+    series: bionic
+  '8':
+    constraints: arch=amd64 tags=node
+    series: bionic
+  '9':
+    constraints: arch=amd64 tags=node
+    series: bionic
+  '10':
+    constraints: arch=amd64 tags=node
+    series: bionic
+  '11':
+    constraints: arch=amd64 tags=node
+    series: bionic
+  '12':
+    constraints: arch=amd64 tags=node
+    series: bionic
+  '13':
+    constraints: arch=amd64 tags=node
+    series: bionic
+  '14':
+    constraints: arch=amd64 tags=node
+    series: bionic
+series: bionic
+services:
+  ceph-mon:
+    charm: cs:bionic/ceph-mon
+    num_units: 3
+    to:
+    - '12'
+    - '13'
+    - '14'
+  ceph-osd:
+    charm: cs:bionic/ceph-osd
+    num_units: 3
+    options:
+      osd-devices: /dev/vdb
+    to:
+    - '0'
+    - '1'
+    - '2'
+  ceph-radosgw:
+    charm: cs:bionic/ceph-radosgw
+    num_units: 1
+    to:
+    - '5'
+  rabbitmq-server:
+    num_units: 1
+    charm: cs:rabbitmq-server
+    to:
+    - '3'
+  mysql:
+    num_units: 1
+    charm: cs:percona-cluster
+    options:
+      dataset-size: 50%
+      max-connections: 20000
+      root-password: ChangeMe123
+      sst-password: ChangeMe123
+    to:
+    - '0'
+  keystone:
+    num_units: 1
+    charm: cs:keystone
+    options:
+      debug: *debug
+      verbose: *verbose
+      admin-password: openstack
+      admin-token: ubuntutesting
+    to:
+    - '4' 
+  openstack-dashboard:
+    num_units: 1
+    charm: cs:openstack-dashboard
+    to:
+    - '6'
+  nova-compute:
+    charm: cs:nova-compute
+    num_units: 3
+    options:
+      debug: *debug
+      verbose: *verbose
+      enable-live-migration: True
+      enable-resize: True
+      migration-auth-type: ssh
+    to:
+    - '0'
+    - '1'
+    - '2'
+  nova-cloud-controller:
+    num_units: 1
+    charm: cs:nova-cloud-controller
+    options:
+      debug: *debug
+      verbose: *verbose
+      network-manager: Neutron
+    to:
+    - '7'
+  neutron-gateway:
+    num_units: 1
+    charm: cs:neutron-gateway
+    options:
+      debug: *debug
+      verbose: *verbose
+      instance-mtu: 1300
+      bridge-mappings: physnet1:br-ex
+    to:
+    - '8'
+  neutron-api:
+    num_units: 1
+    charm: cs:neutron-api
+    options:
+      debug: *debug
+      verbose: *verbose
+      neutron-security-groups: True
+      flat-network-providers: physnet1
+    to:
+    - '9'
+  neutron-openvswitch:
+    charm: cs:neutron-openvswitch
+    num_units: 0
+  cinder:
+    num_units: 1
+    charm: cs:cinder
+    options:
+      debug: *debug
+      verbose: *verbose
+      block-device: /dev/vdb
+      ephemeral-unmount: "/mnt"
+      overwrite: "true"
+      glance-api-version: 2
+    to:
+    - '10'
+  cinder-ceph:
+    charm: cs:bionic/cinder-ceph
+    num_units: 0
+  glance:
+    num_units: 1
+    charm: cs:glance
+    options:
+      debug: *debug
+      verbose: *verbose
+    to:
+    - '11'
+relations:
+  - [ keystone, mysql ]
+  - - nova-cloud-controller:shared-db
+    - mysql:shared-db
+  - - nova-cloud-controller:amqp
+    - rabbitmq-server:amqp
+  - [ nova-cloud-controller, glance ]
+  - [ nova-cloud-controller, keystone ]
+  - [ nova-compute, nova-cloud-controller ]
+  - - nova-compute
+    - rabbitmq-server:amqp
+  - [ nova-compute, glance ]
+  - [ glance, mysql ]
+  - [ glance, keystone ]
+  - [ glance, "cinder:image-service" ]
+  - [ glance, rabbitmq-server ]
+  - [ cinder, mysql ]
+  - [ cinder, rabbitmq-server ]
+  - [ cinder, nova-cloud-controller ]
+  - [ cinder, keystone ]
+  - [ neutron-gateway, nova-cloud-controller ]
+  - - openstack-dashboard:identity-service
+    - keystone:identity-service
+  - [ "neutron-gateway:amqp", rabbitmq-server ]
+  - [ neutron-api, mysql ]
+  - [ neutron-api, rabbitmq-server ]
+  - [ neutron-api, nova-cloud-controller ]
+  - [ neutron-api, neutron-openvswitch ]
+  - [ neutron-api, keystone ]
+  - [ neutron-api, neutron-gateway ]
+  - [ neutron-openvswitch, nova-compute ]
+  - [ neutron-openvswitch, rabbitmq-server ]
+  - - cinder-ceph:storage-backend
+    - cinder:storage-backend
+  - - ceph-mon:client
+    - nova-compute:ceph
+  - - ceph-mon:client
+    - cinder-ceph:ceph
+  - - ceph-osd:mon
+    - ceph-mon:osd
+  - - ceph-radosgw:mon
+    - ceph-mon:radosgw
+  - - ceph-radosgw:identity-service
+    - keystone:identity-service

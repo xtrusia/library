@@ -1,0 +1,217 @@
+# vim: set ts=2 et:
+# IMPORTANT: ALL MODIFICATIONS SHOULD BE MADE TO THE TEMPLATE THEN REGENERATE
+#            THE BUNDLE WITH generate-bundle.sh 
+# Juju 2.x native deployer bundle for development ('next') charms
+
+## Variables
+debug:                      &debug                     True
+verbose:                    &verbose                   True
+loglevel:                   &loglevel                  10
+openstack_origin:           &openstack_origin          cloud:bionic-rocky
+source:                     &source                    cloud:bionic-rocky
+
+machines:
+  '0':
+    constraints: arch=amd64 tags=compute
+    series: bionic
+  '1':
+    constraints: arch=amd64 tags=compute
+    series: bionic
+  '2':
+    constraints: arch=amd64 tags=compute
+    series: bionic
+  '3':
+    constraints: arch=amd64 tags=compute
+    series: bionic
+  '4':
+    constraints: arch=amd64 tags=compute
+    series: bionic
+  '5':
+    constraints: arch=amd64 tags=small
+    series: bionic
+  '6':
+    constraints: arch=amd64 tags=small
+    series: bionic
+  '7':
+    constraints: arch=amd64 tags=small
+    series: bionic
+  '8':
+    constraints: arch=amd64 tags=small
+    series: bionic
+  '9':
+    constraints: arch=amd64 tags=small
+    series: bionic
+
+series: bionic
+services:
+  rabbitmq-server:
+    num_units: 1
+    charm: cs:~openstack-charmers-next/rabbitmq-server
+    options:
+      source: *source
+      access-network: 192.168.0.0/16
+    to:
+    - lxd:0
+  ceph-mon:
+    charm: cs:~openstack-charmers-next/ceph-mon
+    num_units: 3
+    options:
+      source: *source
+      loglevel: *loglevel
+      monitor-count: 3
+      monitor-secret: AQCXrnZQwI7KGBAAiPofmKEXKxu5bUzoYLVkbQ==
+      expected-osd-count: 3
+    to:
+    - lxd:1
+    - lxd:2
+    - lxd:3
+  ceph-osd:
+    charm: cs:~openstack-charmers-next/ceph-osd
+    num_units: 3
+    options:
+      source: *source
+      loglevel: *loglevel
+      osd-devices: '/dev/vdb'  # must be empty string when using juju storage
+    to:
+    - '6'
+    - '7'
+    - '8'
+  keystone:
+    num_units: 1
+    charm: cs:~openstack-charmers-next/keystone
+    options:
+      debug: *debug
+      verbose: *verbose
+      admin-password: openstack
+      admin-token: ubuntutesting
+      openstack-origin: *openstack_origin
+    to:
+    - lxd:4
+  nova-compute:
+    charm: cs:~openstack-charmers-next/nova-compute
+    num_units: 1
+    options:
+      debug: *debug
+      verbose: *verbose
+      enable-live-migration: True
+      enable-resize: True
+      migration-auth-type: ssh
+      libvirt-image-backend: rbd
+      openstack-origin: *openstack_origin
+    to:
+    - '5'
+  nova-cloud-controller:
+    num_units: 1
+    charm: cs:~openstack-charmers-next/nova-cloud-controller
+    options:
+      debug: *debug
+      verbose: *verbose
+      network-manager: Neutron
+      openstack-origin: *openstack_origin
+    to:
+    - '9'
+  neutron-gateway:
+    num_units: 1
+    charm: cs:~openstack-charmers-next/neutron-gateway
+    options:
+      debug: *debug
+      verbose: *verbose
+      instance-mtu: 1300
+      bridge-mappings: physnet1:br-data
+      openstack-origin: *openstack_origin
+    to:
+    - '0'
+  neutron-api:
+    num_units: 1
+    charm: cs:~openstack-charmers-next/neutron-api
+    options:
+      debug: *debug
+      verbose: *verbose
+      neutron-security-groups: True
+      flat-network-providers: physnet1
+      openstack-origin: *openstack_origin
+    to:
+    - lxd:1
+  neutron-openvswitch:
+    charm: cs:~openstack-charmers-next/neutron-openvswitch
+    options:
+      debug: *debug
+      verbose: *verbose
+  cinder:
+    num_units: 1
+    charm: cs:~openstack-charmers-next/cinder
+    options:
+      debug: *debug
+      verbose: *verbose
+      block-device: ""
+      glance-api-version: 2
+      openstack-origin: *openstack_origin
+    to:
+    - lxd:2
+  cinder-ceph:
+    charm: cs:~openstack-charmers-next/cinder-ceph
+  openstack-dashboard:
+    num_units: 1
+    charm: cs:openstack-dashboard
+    options:
+      openstack-origin: cloud:bionic-rocky
+    to:
+    - lxd:2
+  glance:
+    num_units: 1
+    charm: cs:~openstack-charmers-next/glance
+    options:
+      debug: *debug
+      verbose: *verbose
+      openstack-origin: *openstack_origin
+    to:
+    - lxd:3
+  mysql:
+    num_units: 1
+    charm: cs:~openstack-charmers-next/percona-cluster
+    options:
+      dataset-size: 50%
+      max-connections: 20000
+      root-password: ChangeMe123
+      sst-password: ChangeMe123
+      source: *source
+    to:
+    - lxd:4
+relations:
+  - [ keystone, mysql ]
+  - - nova-cloud-controller:shared-db
+    - mysql:shared-db
+  - - nova-cloud-controller:amqp
+    - rabbitmq-server:amqp
+  - [ nova-cloud-controller, glance ]
+  - [ nova-cloud-controller, keystone ]
+  - [ nova-compute, nova-cloud-controller ]
+  - - nova-compute
+    - rabbitmq-server:amqp
+  - [ nova-compute, glance ]
+  - [ ceph-mon, ceph-osd ]
+  - [ glance, mysql ]
+  - [ glance, keystone ]
+  - [ glance, "cinder:image-service" ]
+  - [ glance, rabbitmq-server ]
+  - [ glance, ceph-mon ]
+  - [ cinder, mysql ]
+  - [ cinder, rabbitmq-server ]
+  - [ cinder, nova-cloud-controller ]
+  - [ cinder, keystone ]
+  - [ cinder, cinder-ceph ]
+  - [ cinder-ceph, ceph-mon ]
+  - [ nova-compute, cinder-ceph ]
+  - [ nova-compute, ceph-mon ]
+  - [ neutron-gateway, nova-cloud-controller ]
+  - [ "neutron-gateway:amqp", rabbitmq-server ]
+  - [ neutron-api, mysql ]
+  - [ neutron-api, rabbitmq-server ]
+  - [ neutron-api, nova-cloud-controller ]
+  - [ neutron-api, neutron-openvswitch ]
+  - [ neutron-api, keystone ]
+  - [ neutron-api, neutron-gateway ]
+  - [ neutron-openvswitch, nova-compute ]
+  - [ neutron-openvswitch, rabbitmq-server ]
+  - - openstack-dashboard:identity-service
+    - keystone:identity-service

@@ -1,0 +1,189 @@
+# vim: set ts=2 et:
+# IMPORTANT: ALL MODIFICATIONS SHOULD BE MADE TO THE TEMPLATE THEN REGENERATE
+#            THE BUNDLE WITH generate-bundle.sh <series> [<os-release>] [<pocket>]
+# Juju 2.x native deployer bundle for development ('next') charms
+
+## Variables
+debug:                      &debug                     True
+verbose:                    &verbose                   True
+
+machines:
+  '0':
+    constraints: arch=amd64 tags=node
+    series: xenial
+  '1':
+    constraints: arch=amd64 tags=node
+    series: xenial
+  '2':
+    constraints: arch=amd64 tags=node
+    series: xenial
+  '3':
+    constraints: arch=amd64 tags=node
+    series: xenial
+  '4':
+    constraints: arch=amd64 tags=node
+    series: xenial
+  '5':
+    constraints: arch=amd64 tags=node
+    series: xenial
+  '6':
+    constraints: arch=amd64 tags=node
+    series: xenial
+  '7':
+    constraints: arch=amd64 tags=node
+    series: xenial
+  '8':
+    constraints: arch=amd64 tags=node
+    series: xenial
+  '9':
+    constraints: arch=amd64 tags=node
+    series: xenial
+  '10':
+    constraints: arch=amd64 tags=node
+    series: xenial
+  '11':
+    constraints: arch=amd64 tags=compute
+    series: xenial
+  '12':
+    constraints: arch=amd64 tags=compute
+    series: xenial
+series: xenial
+services:
+  rabbitmq-server:
+    num_units: 1
+    charm: cs:rabbitmq-server
+    to:
+    - 0
+  keystone:
+    num_units: 1
+    charm: cs:keystone
+    options:
+      debug: *debug
+      verbose: *verbose
+      admin-password: openstack
+      admin-token: ubuntutesting
+      openstack-origin: cloud:xenial-queens
+    to:
+    - 1
+  nova-compute:
+    charm: cs:nova-compute
+    num_units: 2
+    options:
+      debug: *debug
+      verbose: *verbose
+      enable-live-migration: True
+      enable-resize: True
+      migration-auth-type: ssh
+      openstack-origin: cloud:xenial-queens
+    to:
+    - 11
+    - 12
+  nova-cloud-controller:
+    num_units: 3
+    charm: cs:nova-cloud-controller
+    options:
+      debug: *debug
+      verbose: *verbose
+      network-manager: Neutron
+      openstack-origin: cloud:xenial-queens
+      vip : 10.0.0.254 10.0.0.253
+      console-access-protocol: novnc
+      console-ssl-key: LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JSUV2UUlCQURBTkJna3Foa2lHOXcwQkFRRUZBQVNDQktjd2dnU2pBZ0VBQW9JQkFRQ1lzNThxNm14MVEvUk8KS1VtajVxQ01tYVVoOUVrbkN2SGdPQTc4WXBHTGRRYmM2NzhyQnZRNHE5WnhkenhhRUxneWpQZkJhU3NPRkJvYQo0bWhLcVA3RzAydUpVaWVUZlBWajFZK1RUQnJDR3RlY2tvZnI1TEpxc2VRb08ydkF5TjR1a2xYek11OGV0enFpCmFPb3RMNWExS0RVUlFVSHp0Znl6SS9VM0pDL1hRTXpmSXZBT1NhdUk1QXhqYllvMGJWZ09NeTF1dWxSdm1nTFYKbTZEZEs2NDUxYUU4Z1d0VnJDcStyazJ2NmNVZ2pWS2hoSk1KSGhBWXZxdm1ZMHFHSldpeUVoSTZuYWVYWmFwKwo5WEtqRnA5dTE1eHoyRXMvbUtha21UUEVGQ1FCaXlwNHVDaW1IMEY1eEZSc0ZoaXdreXIvVDUrcmFOZFNaeVc0Ck5XUkpJc0YzQWdNQkFBRUNnZ0VBQjMweERtRHVqblpxNU1CeW9QYXp6Z3dsQktiSjhGVVc2cjVsRnhkYkl3SDIKSXdudTEybmhFQkhNRThiYmIyRmRpZlo1bWkzbkU0QXZPRDFTdHhnQVhYajErbHloODBKUUkwN1FoVkt1QjBkYgpacmhBVy9TSFB1TllRMm1IK0lNQmMrV2FaZHlNSWdTdUpxbEs2WW9VSHB0ZVlENXVsbk56b0J6Z2hHS2lkQVhoClZyNldTc0d3bDZzZHZxcmppMWo4eDBKMVk4V3JFVXBkWW1ENnc3WEFVNThJZWhoMXI1UDE4TVdKRDRtNVd5aEQKN1Bna2ZidHlrRnorVkw2aGF5cEZKYjlXZHlrMC9DTVBtalBvTTdjWllQZ3VmUDcwWlBSa3pvMVJGM0JJT2JNdwpheUZxWDFtbmFCeVlWTDUyNVo5aURwVXlRTlozMDBCTU0zenlCY2RqVVFLQmdRREhUUnc0SkhqUkVwZUV4UzRVCjZ1d2p3ZGlZUUUxZ3Z1MDhNak04dUdRRklIRDcxNzc3VTEvRWZxbXoxWjh4Ui85QWxad2lqNlpWRGw0dWZNNFQKVU5XMkpCbDgrVHVtUzNRVC9Ib1krZ1ZZcTFFVUZYdWwzb3o5bkFNaGExL2V6d2lLaERzZnpTbGZsNUUvcVp4VgpEK2lYZTVwR2pRdmlobnZyNC9vcmJUTE9FUUtCZ1FERUpMZFNBUEVLL2U5am1FMnl1c0xCNE4wMHNsdGMwL2JPCnVzdU4xbGJac2JyZXJTYVpLRG00ZXhRVVJ6YUhNUUhLb3lCYTM1dHFaanQ2YTRMQVFnTnBBeGY4cWhRdzg1V2sKZXVhOFhFQUpCSytBV1pNSEFla0x3c1B6VGJKRUhEYytEbU1WSWNHUFl6Y0QwaVNFVnorNmJNb2l5SGpwcXhUQQpwamtwNkVvdkJ3S0JnQ280ejgybERHTmVpUEw3d3ZOemdXdGgyYjBIZ2wwSWxjRzI4TnZnUkhCQm15My9XdHByCm8xSkJjenBCKzJPNVdQNFpzK1l1Z0pKc1pNOThhVHYyV0JBcVBhd1lNT2JkL1UxdW8zOC9HSHJjY0dUTTJGRWYKZ01jSmtqQTJTeTBzdHlhQk5QVmJ4WFFXN0JLTW9DMzFITlZhdmloTUlVUndNVGljSjVlam5xdkJBb0dBVHVYZAovOVIxSVZESURLM2xBekh3eVlBa091QkxzK2xuYS96amlHaGhneXZrMlZHWkp4NXhLVzRJdzZkcG5iUHUzbzRECm84b3lmL2dqa0xqU1hYZXdXM3R0R0t0cGQ4OWpzRWZuckhrSElSbUxadnVoRXI2SCtiMGNpVEFGdHpRS1hLSDQKNVRVdzRQYXQySkdkTXNiTjBiV1ZFYXpHUm1nVTd2RnVLUmRSVDkwQ2dZRUFsMkxtTVBhQUpsRHY4OTBnemh4Mwp3UXBVTkE2SUFCWWcwQk1zUDJYTGc0N0VRSGU0MnNHay80d1YyUzVDYzNXVTdKYjBiMUxGQWpNMTVOelFDM0lkCmN5VldlczFUZFNzcUV4elNHelRBUzNkL2lBVnlWbDdpWWhYemt3Uk90MjNFZ1A1RTExU2NXN3dDeGR6aHVBVWMKUzBJYVZ4UmxBMnNUb0pJWVB4cFJaSGc9Ci0tLS0tRU5EIFBSSVZBVEUgS0VZLS0tLS0K
+      console-ssl-cert: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUdFakNDQlBxZ0F3SUJBZ0lTQXlhNDhpL2hmcE1QWVJZUHZEQUtoNEZXTUEwR0NTcUdTSWIzRFFFQkN3VUEKTUVveEN6QUpCZ05WQkFZVEFsVlRNUll3RkFZRFZRUUtFdzFNWlhRbmN5QkZibU55ZVhCME1TTXdJUVlEVlFRRApFeHBNWlhRbmN5QkZibU55ZVhCMElFRjFkR2h2Y21sMGVTQllNekFlRncweE9ERXhNRFV4TWpVNU1UQmFGdzB4Ck9UQXlNRE14TWpVNU1UQmFNQll4RkRBU0JnTlZCQU1UQzNoMGNuVnphV0V1WTI5dE1JSUJJakFOQmdrcWhraUcKOXcwQkFRRUZBQU9DQVE4QU1JSUJDZ0tDQVFFQW1MT2ZLdXBzZFVQMFRpbEpvK2FnakptbElmUkpKd3J4NERnTwovR0tSaTNVRzNPdS9Ld2IwT0t2V2NYYzhXaEM0TW96M3dXa3JEaFFhR3VKb1Nxait4dE5yaVZJbmszejFZOVdQCmswd2F3aHJYbkpLSDYrU3lhckhrS0R0cndNamVMcEpWOHpMdkhyYzZvbWpxTFMrV3RTZzFFVUZCODdYOHN5UDEKTnlRdjEwRE0zeUx3RGttcmlPUU1ZMjJLTkcxWURqTXRicnBVYjVvQzFadWczU3V1T2RXaFBJRnJWYXdxdnE1TgpyK25GSUkxU29ZU1RDUjRRR0w2cjVtTktoaVZvc2hJU09wMm5sMldxZnZWeW94YWZidGVjYzloTFA1aW1wSmt6CnhCUWtBWXNxZUxnb3BoOUJlY1JVYkJZWXNKTXEvMCtmcTJqWFVtY2x1RFZrU1NMQmR3SURBUUFCbzRJREpEQ0MKQXlBd0RnWURWUjBQQVFIL0JBUURBZ1dnTUIwR0ExVWRKUVFXTUJRR0NDc0dBUVVGQndNQkJnZ3JCZ0VGQlFjRApBakFNQmdOVkhSTUJBZjhFQWpBQU1CMEdBMVVkRGdRV0JCUXhlMHp1UWRjZmpUQStsVVZLQllNTjFyazNBVEFmCkJnTlZIU01FR0RBV2dCU29TbXBqQkgzZHV1YlJPYmVtUldYdjg2anNvVEJ2QmdnckJnRUZCUWNCQVFSak1HRXcKTGdZSUt3WUJCUVVITUFHR0ltaDBkSEE2THk5dlkzTndMbWx1ZEMxNE15NXNaWFJ6Wlc1amNubHdkQzV2Y21jdwpMd1lJS3dZQkJRVUhNQUtHSTJoMGRIQTZMeTlqWlhKMExtbHVkQzE0TXk1c1pYUnpaVzVqY25sd2RDNXZjbWN2Ck1DY0dBMVVkRVFRZ01CNkNEM2QzZHk1NGRISjFjMmxoTG1OdmJZSUxlSFJ5ZFhOcFlTNWpiMjB3Z2Y0R0ExVWQKSUFTQjlqQ0I4ekFJQmdabmdRd0JBZ0V3Z2VZR0N5c0dBUVFCZ3Q4VEFRRUJNSUhXTUNZR0NDc0dBUVVGQndJQgpGaHBvZEhSd09pOHZZM0J6TG14bGRITmxibU55ZVhCMExtOXlaekNCcXdZSUt3WUJCUVVIQWdJd2daNE1nWnRVCmFHbHpJRU5sY25ScFptbGpZWFJsSUcxaGVTQnZibXg1SUdKbElISmxiR2xsWkNCMWNHOXVJR0o1SUZKbGJIbHAKYm1jZ1VHRnlkR2xsY3lCaGJtUWdiMjVzZVNCcGJpQmhZMk52Y21SaGJtTmxJSGRwZEdnZ2RHaGxJRU5sY25ScApabWxqWVhSbElGQnZiR2xqZVNCbWIzVnVaQ0JoZENCb2RIUndjem92TDJ4bGRITmxibU55ZVhCMExtOXlaeTl5ClpYQnZjMmwwYjNKNUx6Q0NBUVFHQ2lzR0FRUUIxbmtDQkFJRWdmVUVnZklBOEFCMUFGV0IxTUlXa0RZQlN1b0wKbTFjOFUvREE1RGg0Y0NVSUZ5K2pxaDBIRTlNTUFBQUJadVFyaXU0QUFBUURBRVl3UkFJZ0xjSEEvZmNQdnhTeApXWFpTY1lEVzA2Y0NWQ1ZKbHI2YVphNmVhUlBvT2s0Q0lDRXM2WkNuNVcxcGtMb3A1aEtaV0QvRXJVRHZFMUNDCkV6bmRBYXZtaDZxYUFIY0FZL0xiemVnN3pDelBDM0tFSjFkck02U05ZWGVQdlhXbU9MSEhhRlJMMkkwQUFBRm0KNUN1S3dRQUFCQU1BU0RCR0FpRUF5dVhXd3dmQWlkTEM3Q0R5MnhsMW9GbTM4dmNCY0lNK24yUFpnRzU1Z0o0QwpJUUNGRi94MHlzNTlUVEExZ1NKdnFIVnZyTDlTdU1WK0dKSFBXeTNEM1k4aVlUQU5CZ2txaGtpRzl3MEJBUXNGCkFBT0NBUUVBVlhpTk9ZdGIrRzBqSVBYMTdKb0puYWErbmhpTFNHWUUzbEhYdWVGN281aEM2VEFrc2c0cndxV0EKeDQ0TVJOTkRmdTBPa2xnNEU2WGF6dlRBWkdWVXNFeW92Y3RObUt5N0ZlMFh3SUt3WFpGZTFmWDN2SFkwNDl1dwpoUlgxZ0x2elQ2Tm4yeVNGVHBqZDd1aDJWS3ErU0JCSHB4UXloVDFwVHRrV0pMWUNWTzIybk92anl1cDBiUEJqCk9SKzFycWJ2UDEzRXU0aFJaaEdBYzB0VytwTG9qRTQrTW9mODVsTU54WG9ZS2QyaTZROERZWmNaWXgrMjV3Y3QKWG5NeHlyWWlvNmFwN0JBR05tZjA3Wm5iVGNkSkZNLzRPMzlyYmZiNGtsb0pJWWJmSFpkdTNLTFYvU2NsNjRLbgpsT2tNN29Ud05oK0Y0VTEvMm5wVlpxdUFVcnlwbUE9PQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+    to:
+    - 3
+    - 4
+    - 5
+  ncc-hacluster:
+    charm: cs:hacluster
+  openstack-dashboard:
+    num_units: 1
+    charm: cs:openstack-dashboard
+    to:
+    - 2
+  neutron-gateway:
+    num_units: 1
+    charm: cs:neutron-gateway
+    options:
+      debug: *debug
+      verbose: *verbose
+      instance-mtu: 1300
+      bridge-mappings: physnet1:br-ex
+      openstack-origin: cloud:xenial-queens
+    to:
+    - 6
+  neutron-api:
+    num_units: 1
+    charm: cs:neutron-api
+    options:
+      debug: *debug
+      verbose: *verbose
+      neutron-security-groups: True
+      flat-network-providers: physnet1
+      openstack-origin: cloud:xenial-queens
+    to:
+    - 8
+  neutron-openvswitch:
+    charm: cs:neutron-openvswitch
+    num_units: 0
+  cinder:
+    num_units: 1
+    charm: cs:cinder
+    options:
+      debug: *debug
+      verbose: *verbose
+      block-device: None
+      glance-api-version: 2
+      openstack-origin: cloud:xenial-queens
+    to:
+    - 9
+  glance:
+    num_units: 1
+    charm: cs:glance
+    options:
+      debug: *debug
+      verbose: *verbose
+      openstack-origin: cloud:xenial-queens
+    to:
+    - 10
+  mysql:
+    num_units: 1
+    charm: cs:percona-cluster
+    options:
+      dataset-size: 50%
+      max-connections: 20000
+      root-password: ChangeMe123
+      sst-password: ChangeMe123
+    to:
+    - 7
+relations:
+  - [ keystone, mysql ]
+  - [ nova-cloud-controller, mysql ]
+  - [ nova-cloud-controller, rabbitmq-server ]
+  - [ nova-cloud-controller, glance ]
+  - [ nova-cloud-controller, keystone ]
+  - [ nova-cloud-controller, ncc-hacluster ]
+  - [ nova-compute, nova-cloud-controller ]
+  - - nova-compute
+    - rabbitmq-server:amqp
+  - [ nova-compute, glance ]
+  - [ glance, mysql ]
+  - [ glance, keystone ]
+  - [ glance, "cinder:image-service" ]
+  - [ glance, rabbitmq-server ]
+  - [ cinder, mysql ]
+  - [ cinder, rabbitmq-server ]
+  - [ cinder, nova-cloud-controller ]
+  - [ cinder, keystone ]
+  - [ neutron-gateway, nova-cloud-controller ]
+  - [ "neutron-gateway:amqp", rabbitmq-server ]
+  - [ neutron-api, mysql ]
+  - [ neutron-api, rabbitmq-server ]
+  - [ neutron-api, nova-cloud-controller ]
+  - [ neutron-api, neutron-openvswitch ]
+  - [ neutron-api, keystone ]
+  - [ neutron-api, neutron-gateway ]
+  - [ neutron-openvswitch, nova-compute ]
+  - [ neutron-openvswitch, rabbitmq-server ]
+  - - openstack-dashboard:identity-service
+    - keystone:identity-service

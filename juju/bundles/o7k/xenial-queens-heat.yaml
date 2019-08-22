@@ -1,0 +1,294 @@
+# vim: set ts=2 et:
+# IMPORTANT: ALL MODIFICATIONS SHOULD BE MADE TO THE TEMPLATE THEN REGENERATE
+#            THE BUNDLE WITH generate-bundle.sh <series> [<os-release>] [<pocket>]
+# Juju 2.x native deployer bundle for development ('next') charms
+
+## Variables
+debug:                      &debug                     True
+verbose:                    &verbose                   True
+
+machines:
+  '0':
+    constraints: arch=amd64 tags=compute
+    series: xenial
+  '1':
+    constraints: arch=amd64 tags=compute
+    series: xenial
+  '2':
+    constraints: arch=amd64 tags=compute
+    series: xenial
+  '3':
+    constraints: arch=amd64 tags=node
+    series: xenial
+  '4':
+    constraints: arch=amd64 tags=node
+    series: xenial
+  '5':
+    constraints: arch=amd64 tags=node
+    series: xenial
+  '6':
+    constraints: arch=amd64 tags=node
+    series: xenial
+  '7':
+    constraints: arch=amd64 tags=node
+    series: xenial
+  '8':
+    constraints: arch=amd64 tags=node
+    series: xenial
+  '9':
+    constraints: arch=amd64 tags=compute
+    series: xenial
+  '10':
+    constraints: arch=amd64 tags=node
+    series: xenial
+  '11':
+    constraints: arch=amd64 tags=compute
+    series: xenial
+  '12':
+    constraints: arch=amd64 tags=node
+    series: xenial
+  '13':
+    constraints: arch=amd64 tags=node
+    series: xenial
+series: xenial
+services:
+  ceph-mon:
+    charm: cs:ceph-mon
+    num_units: 3
+    options:
+      source: cloud:xenial-queens
+    to:
+    - lxd:0
+    - lxd:1
+    - lxd:2
+  ceph-osd:
+    num_units: 3
+    charm: cs:ceph-osd
+    options:
+      osd-devices: /dev/vdb
+      source: cloud:xenial-queens
+    to:
+    - '0'
+    - '1'
+    - '2'
+  ceph-radosgw:
+    num_units: 1
+    charm: cs:ceph-radosgw
+    options:
+      source: cloud:xenial-queens
+    to:
+    - 3
+  ceilometer:
+    num_units: 1
+    charm: cs:~openstack-charmers-next/ceilometer
+    options:
+      debug: *debug
+      verbose: *verbose
+      openstack-origin: cloud:xenial-queens
+    to:
+    - 4
+  ceilometer-agent:
+    charm: cs:ceilometer-agent
+  aodh:
+    num_units: 1
+    charm: cs:aodh
+    options:
+      openstack-origin: cloud:xenial-queens
+    to:
+    - 5
+  heat:
+    num_units: 1
+    charm: cs:heat
+    options:
+      openstack-origin: cloud:xenial-queens
+    to:
+    - 6
+  rabbitmq-server:
+    num_units: 1
+    charm: cs:rabbitmq-server
+    to:
+    - 7
+  keystone:
+    num_units: 1
+    charm: cs:keystone
+    options:
+      debug: *debug
+      verbose: *verbose
+      admin-password: openstack
+      admin-token: ubuntutesting
+      openstack-origin: cloud:xenial-queens
+      preferred-api-version: 3
+    to:
+    - 8
+  openstack-dashboard:
+    num_units: 1
+    charm: cs:openstack-dashboard
+    options:
+      openstack-origin: cloud:xenial-queens
+    to:
+    - lxd:8
+  nova-compute:
+    charm: cs:nova-compute
+    num_units: 1
+    options:
+      debug: *debug
+      verbose: *verbose
+      enable-live-migration: True
+      enable-resize: True
+      migration-auth-type: ssh
+      openstack-origin: cloud:xenial-queens
+    to:
+    - 9
+  nova-cloud-controller:
+    num_units: 1
+    charm: cs:nova-cloud-controller
+    options:
+      debug: *debug
+      verbose: *verbose
+      network-manager: Neutron
+      openstack-origin: cloud:xenial-queens
+    to:
+    - 10
+  neutron-gateway:
+    num_units: 1
+    charm: cs:neutron-gateway
+    options:
+      debug: *debug
+      verbose: *verbose
+      instance-mtu: 1300
+      bridge-mappings: physnet1:br-ex
+      openstack-origin: cloud:xenial-queens
+    to:
+    - 11 
+  neutron-api:
+    num_units: 1
+    charm: cs:neutron-api
+    options:
+      debug: *debug
+      verbose: *verbose
+      neutron-security-groups: True
+      flat-network-providers: physnet1
+      openstack-origin: cloud:xenial-queens
+    to:
+    - lxd:10
+  neutron-openvswitch:
+    charm: cs:neutron-openvswitch
+    num_units: 0
+  cinder:
+    num_units: 1
+    charm: cs:cinder
+    options:
+      debug: *debug
+      verbose: *verbose
+      block-device: None
+      glance-api-version: 2
+      openstack-origin: cloud:xenial-queens
+    to:
+    - lxd:4
+#  cinder-hacluster:
+#    num_units: 0
+#    charm: cs:hacluster
+#    options:
+#      cluster_count: 3
+  cinder-ceph:
+    num_units: 0
+    charm: cs:cinder-ceph
+  glance:
+    num_units: 1
+    charm: cs:glance
+    options:
+      debug: *debug
+      verbose: *verbose
+      openstack-origin: cloud:xenial-queens
+    to:
+    - lxd:5
+  mysql:
+    num_units: 1
+    charm: cs:percona-cluster
+    options:
+      dataset-size: 50%
+      max-connections: 20000
+      root-password: ChangeMe123
+      sst-password: ChangeMe123
+    to:
+    - 12
+  mongodb:
+    num_units: 1
+    charm: cs:mongodb
+    to:
+    - 13
+  gnocchi:
+    num_units: 1
+    charm: cs:~openstack-charmers-next/gnocchi
+    options:
+      openstack-origin: cloud:xenial-queens
+    to:
+    - lxd:13
+  memcached:
+    num_units: 1
+    charm: cs:memcached
+    to:
+    - lxd:12
+relations:
+#  - [ cinder, cinder-hacluster ]
+  - [ gnocchi, mysql ]
+  - [ gnocchi, ceph-mon ]
+  - [ gnocchi, memcached ]
+  - [ gnocchi, keystone ]
+  - [ gnocchi, ceilometer ]
+  - - ceilometer:identity-credentials
+    - keystone
+  - [ "ceilometer:amqp", "rabbitmq-server:amqp" ]
+  - [ ceilometer, mongodb ]
+  - [ ceilometer-agent, nova-compute ]
+  - [ ceilometer-agent, ceilometer ]
+  - [ ceilometer-agent, rabbitmq-server ]
+  - [ aodh, keystone ]
+  - [ aodh, mysql ]
+  - [ aodh, rabbitmq-server ]
+  - [ heat, keystone ]
+  - [ heat, mysql ]
+  - [ heat, rabbitmq-server ]
+  - [ keystone, mysql ]
+  - [ "nova-cloud-controller:shared-db", mysql ]
+  - [ "nova-cloud-controller:amqp", rabbitmq-server ]
+  - [ nova-cloud-controller, glance ]
+  - [ nova-cloud-controller, keystone ]
+  - [ nova-compute, nova-cloud-controller ]
+  - - nova-compute
+    - rabbitmq-server:amqp
+  - [ nova-compute, glance ]
+  - [ glance, mysql ]
+  - [ glance, keystone ]
+  - [ glance, "cinder:image-service" ]
+  - [ glance, rabbitmq-server ]
+  - [ cinder, mysql ]
+  - [ cinder, rabbitmq-server ]
+  - [ cinder, nova-cloud-controller ]
+  - [ cinder, keystone ]
+  - [ neutron-gateway, nova-cloud-controller ]
+  - - openstack-dashboard:identity-service
+    - keystone:identity-service
+  - [ "neutron-gateway:amqp", rabbitmq-server ]
+  - [ neutron-api, mysql ]
+  - [ neutron-api, rabbitmq-server ]
+  - [ neutron-api, nova-cloud-controller ]
+  - [ neutron-api, neutron-openvswitch ]
+  - [ neutron-api, keystone ]
+  - [ neutron-api, neutron-gateway ]
+  - [ neutron-openvswitch, nova-compute ]
+  - [ neutron-openvswitch, rabbitmq-server ]
+  - - cinder-ceph:storage-backend
+    - cinder:storage-backend
+  - - ceph-mon:client
+    - nova-compute:ceph
+  - - ceph-mon:client
+    - cinder-ceph:ceph
+  - - ceph-mon:client
+    - glance:ceph
+  - - ceph-osd:mon
+    - ceph-mon:osd
+  - - ceph-radosgw:mon
+    - ceph-mon:radosgw
+  - - ceph-radosgw:identity-service
+    - keystone:identity-service
