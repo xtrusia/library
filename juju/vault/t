@@ -1,0 +1,23 @@
+{
+  "request_id": "4559a09a-7632-55db-c818-9374814f1c1a",
+  "lease_id": "",
+  "lease_duration": 0,
+  "renewable": false,
+  "data": null,
+  "warnings": null,
+  "auth": {
+    "client_token": "s.cvqo9vA0QdP50L4zQHYZCeWm",
+    "accessor": "KCZqiXYV9Xzq0HsOzo8HlVS4",
+    "policies": [
+      "root"
+    ],
+    "token_policies": [
+      "root"
+    ],
+    "identity_policies": null,
+    "metadata": null,
+    "orphan": false,
+    "lease_duration": 600,
+    "renewable": true
+  }
+}

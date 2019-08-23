@@ -1,0 +1,25 @@
+#!/bin/bash
+
+VAULT_UNIT_IP=$(juju run --unit vault/0 "network-get access --ingress-address=true"); export VAULT_ADDR="http://$VAULT_UNIT_IP:8200"
+
+vault operator init --format json > k
+
+key_1=`jq -r '.unseal_keys_b64[0]' k`
+key_2=`jq -r '.unseal_keys_b64[1]' k`
+key_3=`jq -r '.unseal_keys_b64[2]' k`
+
+echo $key_1
+echo $key_2
+echo $key_3
+
+vault_arr=( $(juju status --format json | jq -r '.applications | .vault | .units | keys | .[]') )
+
+for vault in "${vault_arr[@]}"
+do
+	echo $vault
+
+	VAULT_UNIT_IP=$(juju run --unit $vault "network-get access --ingress-address=true") export VAULT_ADDR="http://$VAULT_UNIT_IP:8200"
+	vault operator unseal $key_1
+	vault operator unseal $key_2
+	vault operator unseal $key_3
+done

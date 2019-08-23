@@ -1,0 +1,7 @@
+#!/bin/bash
+
+./0-init
+sleep 240
+./1-token
+sleep 120
+./2-authorize-charm
