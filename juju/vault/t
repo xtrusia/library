@@ -1,13 +1,13 @@
 {
-  "request_id": "3afe6f2d-a695-3925-e990-1e7cd60a8e28",
+  "request_id": "b0e93fc6-e7f8-46a4-39ce-06728198e07f",
   "lease_id": "",
   "lease_duration": 0,
   "renewable": false,
   "data": null,
   "warnings": null,
   "auth": {
-    "client_token": "s.optTbcuN37QsgQysTIUvm0ty",
-    "accessor": "ixPG1FSs5GeqqdTip632cA61",
+    "client_token": "s.QDk8RIfLpazouupJuFNcychs",
+    "accessor": "3mhkPprkCp9ccCMMfFWRGlz2",
     "policies": [
       "root"
     ],

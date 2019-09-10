@@ -1,7 +1,7 @@
 #!/bin/bash
 
-VAULT_UNIT_IP=$(juju run --unit vault/0 "network-get access --ingress-address=true"); export VAULT_ADDR="http://$VAULT_UNIT_IP:8200"
+export VAULT_UNIT_IP=$(juju run --unit vault/0 "network-get access --ingress-address=true"); export VAULT_ADDR="http://$VAULT_UNIT_IP:8200"
 root_token=$(jq -r '.root_token' k)
-expport VAULT_TOKEN=$root_token
+export VAULT_TOKEN=$root_token
 
 vault secrets list -detailed
